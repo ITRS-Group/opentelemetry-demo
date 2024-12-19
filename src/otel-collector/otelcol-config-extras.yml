@@ -8,11 +8,35 @@
 ## Note: the spanmetrics exporter must be included in the exporters array
 ## if overriding the traces pipeline.
 ##
-#  exporters:
-#    otlphttp/example:
-#      endpoint: <your-endpoint-url>
-#
-#  service:
-#    pipelines:
-#      traces:
-#        exporters: [spanmetrics, otlphttp/example]
+
+extensions:
+  basicauth:
+    client_auth:
+      ${ITRS_ANALYTICS_USERNAME_KEY}: ${ITRS_ANALYTICS_USERNAME}
+      ${ITRS_ANALYTICS_PASSWORD_KEY}: ${ITRS_ANALYTICS_PASSWORD}
+
+exporters:
+  otlp/itrs:
+    endpoint: ${ITRS_ANALYTICS_ENDPOINT}
+    auth:
+      authenticator: basicauth
+    tls:
+      insecure: ${TLS_INSECURE}
+
+processors:
+  cumulativetodelta:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/itrs]
+    metrics:
+      receivers: [otlp]
+      processors: [batch, cumulativetodelta]
+      exporters: [otlp/itrs]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/itrs]
